@@ -8,8 +8,6 @@ import qualified Data.Map as M
 import Control.Monad.Except
 import Control.Monad.Reader
 
-
-
 data LispVal
   = Atom T.Text
   | List [LispVal]
@@ -37,5 +35,4 @@ newtype IFunc = IFunc { fn :: [LispVal] -> Eval LispVal }
 
 instance Show IFunc where
   show _ = "(internal function)"
-
 
