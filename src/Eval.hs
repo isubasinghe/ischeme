@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ExistentialQuantification #-}
+
 module Eval where
 import qualified Data.Text as T
 import qualified Data.Map as M
@@ -24,6 +26,15 @@ data LispError
 
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map show
+
+data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
+
+unpackEquals :: LispVal -> LispVal -> Unpacker -> ThrowsError Bool
+unpackEquals arg1 arg2 (AnyUnpacker unpacker) = 
+             do unpacked1 <- unpacker arg1
+                unpacked2 <- unpacker arg2
+                return $ unpacked1 == unpacked2
+        `catchError` const  (return False)
 
 showError :: LispError -> String
 showError (UnboundVar message varname)  = T.unpack message ++ ": " ++ T.unpack varname
@@ -105,6 +116,12 @@ primitives = M.fromList
               , ("string>?", strBoolBinop (>))
               , ("string<=?", strBoolBinop (<=))
               , ("string>=?", strBoolBinop (>=))
+              , ("car", car)
+              , ("cdr", cdr)
+              , ("cons", cons)
+              , ("eq?", eqv)
+              , ("eqv?", eqv)
+              , ("equal?", equal)
               ]
 
 eval :: LispVal -> ThrowsError LispVal
@@ -135,6 +152,28 @@ cons :: [LispVal] -> ThrowsError LispVal
 cons [x1, List []] = return $ List [x1]
 cons [x, List xs] = return $ List $ x : xs
 cons badArgList = throwError $ NumArgs 2 badArgList
+
+eqv :: [LispVal] -> ThrowsError LispVal
+eqv [Bool arg1, Bool arg2] = return $ Bool $ arg1 == arg2
+eqv [Number arg1, Number arg2] = return $ Bool $ arg1 == arg2
+eqv [String arg1, String arg2] = return $ Bool $ arg1 == arg2
+eqv [Atom arg1, Atom arg2] = return $ Bool $ arg1 == arg2
+eqv [List arg1, List arg2] = return $ Bool $ (length arg1 == length arg2) && 
+                                                            all eqvPair (zip arg1 arg2)
+  where eqvPair (x1, x2) = case eqv [x1, x2] of
+                            Left err -> False
+                            Right (Bool val) -> val
+eqv [_, _] = return $ Bool False
+eqv badArgList = throwError $ NumArgs 2 badArgList
+
+equal :: [LispVal] -> ThrowsError LispVal
+equal [arg1, arg2] = do
+      primitiveEquals <- or <$> mapM (unpackEquals arg1 arg2) 
+                        [AnyUnpacker unpackNum, AnyUnpacker unpackStr, AnyUnpacker unpackBool]
+      eqvEquals <- eqv [arg1, arg2]
+      return $ Bool (primitiveEquals || let (Bool x) = eqvEquals in x)
+equal badArgList = throwError $ NumArgs 2 badArgList
+
 
 apply :: T.Text -> [LispVal] -> ThrowsError LispVal
 apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func)

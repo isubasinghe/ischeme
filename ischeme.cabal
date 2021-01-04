@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ec82586081cc26e7d217cf8d4c891032d0fcc802d7a2cc31cf22e63768e2e013
+-- hash: d4dbdc0de0b4d149e8d916d3309b0f5890fcb599721166e9fec938f2552b8e6d
 
 name:           ischeme
 version:        0.1.0.0
@@ -31,6 +31,7 @@ library
       Eval
       Lib
       Parser
+      Repl
   other-modules:
       Paths_ischeme
   hs-source-dirs:
