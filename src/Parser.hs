@@ -85,9 +85,3 @@ contents p = do
   r <- p
   eof
   return r
-
-readExpr :: Text -> Either (ParseErrorBundle Text Void) LispVal
-readExpr = parse (contents parseExpr) "<stdin>"
-
-readExprFile :: Text -> Either (ParseErrorBundle Text Void) LispVal
-readExprFile = parse (contents parseList) "<file>"
