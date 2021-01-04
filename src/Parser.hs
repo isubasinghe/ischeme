@@ -44,9 +44,6 @@ parseText = A.String <$> stringLiteral
 parseNumber :: Parser A.LispVal
 parseNumber = A.Number <$> L.decimal
 
-parseNegNumber :: Parser A.LispVal 
-parseNegNumber = A.Number . (\s -> -s) <$> (char '-' *> L.decimal )
-
 parseList :: Parser LispVal
 parseList = do
   A.List . Prelude.concat <$> many parseExpr `sepBy` (char ' ' <|> char '\n')
@@ -72,7 +69,6 @@ parseReserved = do
 parseExpr:: Parser A.LispVal
 parseExpr = choice
   [ parseReserved
-  , parseNegNumber
   , parseNumber
   , parseQuote
   , parseAtom
