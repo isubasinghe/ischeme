@@ -25,7 +25,7 @@ dependencies:
   - megaparsec ==9.0.1
   - containers ==0.6.4.1
   - mtl==2.2.2
-  - parsec ==3.1.14.0
+  - optparse-applicative ==0.16.1.0
 
 library:
   source-dirs: src
@@ -38,6 +38,20 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -O2
+    - -flate-dmd-anal
+    - -fmax-simplifier-iterations=20
+    - -fsimplifier-phases=10
+    - -fasm-shortcutting
+    - -fspecialise-aggressively
+    - -fcross-module-specialise
+    - -flate-specialise
+    - -fstatic-argument-transformation
+    - -fblock-layout-cfg
+    - -fspec-constr-keen
+    - -fspec-constr-count=10
+    - -fspec-constr-threshold=6000
+    # - -finline-generics-aggressively
     dependencies:
     - ischeme
 

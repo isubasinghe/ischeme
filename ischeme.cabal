@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d4dbdc0de0b4d149e8d916d3309b0f5890fcb599721166e9fec938f2552b8e6d
+-- hash: 1b5c6d237bf9bbecb8d53c33e9ad1144d49da65d46cf4a4a1230ed5264882827
 
 name:           ischeme
 version:        0.1.0.0
@@ -28,6 +28,7 @@ source-repository head
 library
   exposed-modules:
       AST
+      CLI
       Eval
       Lib
       Parser
@@ -41,7 +42,7 @@ library
     , containers ==0.6.4.1
     , megaparsec ==9.0.1
     , mtl ==2.2.2
-    , parsec ==3.1.14.0
+    , optparse-applicative ==0.16.1.0
     , text >=1.2.4.0
   default-language: Haskell2010
 
@@ -51,14 +52,14 @@ executable ischeme-exe
       Paths_ischeme
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2 -flate-dmd-anal -fmax-simplifier-iterations=20 -fsimplifier-phases=10 -fasm-shortcutting -fspecialise-aggressively -fcross-module-specialise -flate-specialise -fstatic-argument-transformation -fblock-layout-cfg -fspec-constr-keen -fspec-constr-count=10 -fspec-constr-threshold=6000
   build-depends:
       base >=4.7 && <5
     , containers ==0.6.4.1
     , ischeme
     , megaparsec ==9.0.1
     , mtl ==2.2.2
-    , parsec ==3.1.14.0
+    , optparse-applicative ==0.16.1.0
     , text >=1.2.4.0
   default-language: Haskell2010
 
@@ -76,6 +77,6 @@ test-suite ischeme-test
     , ischeme
     , megaparsec ==9.0.1
     , mtl ==2.2.2
-    , parsec ==3.1.14.0
+    , optparse-applicative ==0.16.1.0
     , text >=1.2.4.0
   default-language: Haskell2010

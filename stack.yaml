@@ -45,7 +45,7 @@ extra-deps:
   - containers-0.6.4.1@sha256:e9ca297369c207ff40ed561877c15928292b957a01c8551a7cbd50d665a03429,2520
   - binary-0.8.8.0@sha256:e9387a7ef2b34c6a23b09664c306e37cc01ae2cb4e4511a1c96ffb14008c24b0,6262
   - text-1.2.4.0@sha256:8c24450feb8e3bbb7ea3e17af24ef57e85db077c4bf53e5bcc345b283d1b1d5b,10081
-  - parsec-3.1.14.0@sha256:2b7a30ad13b66ed4ae1c8b3b76f7b26f102f63fe4abc48663113686b0d68d2f7,4356
+  - optparse-applicative-0.16.1.0@sha256:d410cc76e288b93d4ee7e06addc0381a7eaea43bcee0c3ced03f05cadec2f2fc,4836
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
