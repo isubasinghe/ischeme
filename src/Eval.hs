@@ -13,7 +13,7 @@ import Parser ( parseExpr )
 import Text.Megaparsec ( parse )
 import Data.Functor ((<&>))
 import Data.IORef ( newIORef, readIORef, writeIORef )
-import Data.Maybe(isJust)
+import Data.Maybe(isNothing, isJust)
 
 nullEnv :: IO Env
 nullEnv = newIORef M.empty
@@ -228,12 +228,12 @@ equal badArgList = throwError $ NumArgs 2 badArgList
 apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply (PrimitiveFunc func) args = liftThrows $ func args
 apply (Func params varargs body closure) args =
-      if num params /= num args && varargs == Nothing
-         then throwError $ NumArgs (num params) args
-         else (liftIO $ bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
+      if num params /= num args && isNothing varargs
+        then throwError $ NumArgs (num params) args
+        else liftIO ( bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
       where remainingArgs = drop (length params) args
             num = toInteger . length
-            evalBody env = liftM last $ mapM (eval env) body
+            evalBody env = last <$> mapM (eval env) body
             bindVarArgs arg env = case arg of
                 Just argName -> liftIO $ bindVars env [(argName, List $ remainingArgs)]
                 Nothing -> return env
