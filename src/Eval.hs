@@ -10,7 +10,7 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import AST
 import Parser ( parseExpr, parseSExprs )
-import Text.Megaparsec ( parse )
+import Text.Megaparsec ( parse, errorBundlePretty )
 import Data.Functor ((<&>))
 import Data.IORef ( newIORef, readIORef, writeIORef )
 import Data.Maybe(isNothing, isJust)
@@ -256,4 +256,4 @@ apply (Func params varargs body closure) args =
 readExpr :: String -> T.Text -> ThrowsError LispVal
 readExpr f s = case parse parseSExprs f s of
                 Right val -> return val
-                Left err -> throwError $ Parser err
+                Left err -> throwError $ Parser $ errorBundlePretty err

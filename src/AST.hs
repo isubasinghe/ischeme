@@ -68,7 +68,7 @@ instance Show LispVal where show = showLispVal
 data LispError
   = NumArgs Integer [LispVal]
   | TypeMismatch T.Text LispVal
-  | Parser (ParseErrorBundle T.Text Void)
+  | Parser String
   | BadSpecialForm T.Text LispVal
   | NotFunction T.Text T.Text
   | UnboundVar T.Text T.Text
@@ -80,6 +80,6 @@ showError (BadSpecialForm message form) = T.unpack message ++ ": " ++ show form
 showError (NotFunction message func)    = T.unpack message ++ ": " ++ show func
 showError (NumArgs expected found)      = "Expected " ++ show expected ++ " args; found values " ++ unwordsList found
 showError (TypeMismatch expected found) = "Invalid type: expected " ++ T.unpack expected ++ ", found " ++ show found
-showError (Parser parseErr)             = "Parse error at " ++ show parseErr
+showError (Parser parseErr)             = parseErr
 
 instance Show LispError where show = showError

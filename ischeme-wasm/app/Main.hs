@@ -14,9 +14,9 @@ import Eval
 import Repl
 
 main :: IO ()
-main = putStrLn "CFW Cabal"
+main = putStrLn "ischeme"
 
-f x = nullEnv >>= (\env -> evalString env x)
+f x = primitiveBindings >>= (\env -> evalString env x)
 
 parseJSToSchemeO :: JSString -> IO JSString
 parseJSToSchemeO s' = toJSString <$> f (T.pack $ fromJSString s')
