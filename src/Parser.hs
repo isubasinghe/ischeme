@@ -71,8 +71,8 @@ parseExpr = choice
   [ parseReserved
   , parseNumber
   , parseQuote
-  , parseAtom
   , parseText
+  , parseAtom
   , parseSExpr    
   ]
 

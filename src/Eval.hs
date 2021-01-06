@@ -54,6 +54,13 @@ defineVar envRef var value = do
         writeIORef envRef $ M.insert var valueRef env
         return value
 
+bindVars :: Env -> [(T.Text, LispVal)] -> IO Env
+bindVars envRef bindings = readIORef envRef >>= extendEnv bindings >>= newIORef
+    where extendEnv bindings env = fmap (\s -> M.fromList s `M.union` env) (mapM addBinding bindings)
+          addBinding (var, value) = do 
+            ref <- newIORef value
+            return (var, ref)
+
 
 data Unpacker = forall a. Eq a => AnyUnpacker (LispVal -> ThrowsError a)
 
@@ -147,6 +154,14 @@ primitives = M.fromList
               , ("equal?", equal)
               ]
 
+primitiveBindings :: IO Env
+primitiveBindings = nullEnv >>= flip bindVars (map makePrimitiveFunc $ M.toAscList primitives)
+     where makePrimitiveFunc (var, func) = (var, PrimitiveFunc func)
+
+makeFunc varargs env params body = return $ Func (map (T.pack . showLispVal) params) varargs body env
+makeNormalFunc = makeFunc Nothing
+makeVarArgs = makeFunc . Just . T.pack . showLispVal
+
 eval :: Env -> LispVal -> IOThrowsError LispVal
 eval _ val@(String _) = return val
 eval _ val@(Number _) = return val
@@ -159,8 +174,18 @@ eval env (List [Atom "if", pred, conseq, alt]) = do
     Bool False -> eval env alt
     _ -> eval env conseq
 eval env (List [Atom "set!", Atom var, form]) = eval env form >>= setVar env var
-eval env (List [Atom "define", Atom var, form]) = eval env form >>= defineVar env var
-eval env (List (Atom func : args)) = mapM (eval env) args >>= liftThrows . apply func
+eval env (List (Atom "define" : List (Atom var : params) : body)) =
+    makeNormalFunc env params body >>= defineVar env var
+eval env (List (Atom "lambda" : List params : body)) =
+    makeNormalFunc env params body
+eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
+    makeVarArgs varargs env [] body
+
+eval env (List (function : args)) = do
+    func <- eval env function
+    argVals <- mapM (eval env) args
+    apply func argVals
+
 eval _ badForm = throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 car :: [LispVal] -> ThrowsError LispVal
@@ -200,10 +225,18 @@ equal [arg1, arg2] = do
 equal badArgList = throwError $ NumArgs 2 badArgList
 
 
-apply :: T.Text -> [LispVal] -> ThrowsError LispVal
-apply func args = maybe (throwError $ NotFunction "Unrecognized primitive function args" func)
-                        ($ args)
-                        (M.lookup func primitives)
+apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
+apply (PrimitiveFunc func) args = liftThrows $ func args
+apply (Func params varargs body closure) args =
+      if num params /= num args && varargs == Nothing
+         then throwError $ NumArgs (num params) args
+         else (liftIO $ bindVars closure $ zip params args) >>= bindVarArgs varargs >>= evalBody
+      where remainingArgs = drop (length params) args
+            num = toInteger . length
+            evalBody env = liftM last $ mapM (eval env) body
+            bindVarArgs arg env = case arg of
+                Just argName -> liftIO $ bindVars env [(argName, List $ remainingArgs)]
+                Nothing -> return env
 
 readExpr :: String -> T.Text -> ThrowsError LispVal
 readExpr f s = case parse parseExpr f s of

@@ -8,6 +8,7 @@ import Data.Void (Void)
 
 import Control.Monad.Except ( ExceptT )
 import Data.IORef ( IORef )
+import Data.List (intercalate)
 
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map show
@@ -25,8 +26,22 @@ data LispVal
   | Nil
   | Bool Bool
   | PrimitiveFunc ([LispVal] -> ThrowsError LispVal)
-  |  Func { params :: [String], vararg :: Maybe String,
+  |  Func { params :: [T.Text], vararg :: Maybe T.Text,
             body :: [LispVal], closure :: Env }
+
+debugLispVal :: LispVal -> String
+debugLispVal (Atom n) = "Atom " ++ T.unpack n
+debugLispVal (List ls) = "List [" ++ intercalate "," (map debugLispVal ls) ++ "]"
+debugLispVal (Number n) = "Atom " ++ show n
+debugLispVal (String t) = "String " ++ T.unpack t
+debugLispVal Nil = "Nil"
+debugLispVal (Bool t) = "Bool " ++ show t
+debugLispVal (PrimitiveFunc pfunc) = "PrimitiveFunc ([LispVal] -> ThrowsError LispVal)"
+debugLispVal Func {params = args, vararg = varargs, body = body, closure = env} = 
+  "(Func (" ++ unwords (map show args) ++
+    (case varargs of
+        Nothing -> ""
+        Just arg -> " . " ++ T.unpack arg) ++ ") ...)"
 
 showLispVal :: LispVal -> String
 showLispVal (String contents) = "\"" ++ T.unpack contents ++ "\""
@@ -41,7 +56,7 @@ showLispVal Func {params = args, vararg = varargs, body = body, closure = env} =
   "(lambda (" ++ unwords (map show args) ++
     (case varargs of
         Nothing -> ""
-        Just arg -> " . " ++ arg) ++ ") ...)"
+        Just arg -> " . " ++ T.unpack arg) ++ ") ...)"
 
 
 instance Show LispVal where show = showLispVal
