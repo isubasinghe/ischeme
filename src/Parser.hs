@@ -76,6 +76,10 @@ parseExpr = choice
   , parseSExpr    
   ]
 
+parseSExprs :: Parser LispVal
+parseSExprs = List' .concat <$> (many parseSExpr `sepBy` (char ' ' <|> char '\n'))
+
+
 contents :: Parser a -> Parser a
 contents p = do
   r <- p

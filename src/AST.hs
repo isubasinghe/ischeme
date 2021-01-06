@@ -21,6 +21,7 @@ type Env = IORef (M.Map T.Text (IORef LispVal))
 data LispVal
   = Atom T.Text
   | List [LispVal]
+  | List' [LispVal]
   | Number Integer
   | String T.Text
   | Nil
@@ -32,6 +33,7 @@ data LispVal
 debugLispVal :: LispVal -> String
 debugLispVal (Atom n) = "Atom " ++ T.unpack n
 debugLispVal (List ls) = "List [" ++ intercalate "," (map debugLispVal ls) ++ "]"
+debugLispVal (List' ls) = "List' [" ++ intercalate "," (map debugLispVal ls) ++ "]"
 debugLispVal (Number n) = "Atom " ++ show n
 debugLispVal (String t) = "String " ++ T.unpack t
 debugLispVal Nil = "Nil"
@@ -50,6 +52,7 @@ showLispVal (Number contents) = show contents
 showLispVal (Bool True) = "#t"
 showLispVal (Bool False) = "#f"
 showLispVal (List ls) = "(" ++ unwordsList ls ++ ")"
+showLispVal (List' ls) = "(" ++ unwordsList ls ++ ")"
 showLispVal Nil = "(nil)"
 showLispVal (PrimitiveFunc _) = "(pfunc)"
 showLispVal Func {params = args, vararg = varargs, body = body, closure = env} =

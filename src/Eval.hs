@@ -9,7 +9,7 @@ import Control.Monad.Except
     ( MonadIO(liftIO), runExceptT, MonadError(..) )
 import Control.Monad.Reader
 import AST
-import Parser ( parseExpr )
+import Parser ( parseExpr, parseSExprs )
 import Text.Megaparsec ( parse )
 import Data.Functor ((<&>))
 import Data.IORef ( newIORef, readIORef, writeIORef )
@@ -156,10 +156,13 @@ primitives = M.fromList
 
 primitiveBindings :: IO Env
 primitiveBindings = nullEnv >>= flip bindVars (map makePrimitiveFunc $ M.toAscList primitives)
-     where makePrimitiveFunc (var, func) = (var, PrimitiveFunc func)
+    where makePrimitiveFunc (var, func) = (var, PrimitiveFunc func)
 
+makeFunc :: Monad m => Maybe T.Text -> Env -> [LispVal] -> [LispVal] -> m LispVal
 makeFunc varargs env params body = return $ Func (map (T.pack . showLispVal) params) varargs body env
+makeNormalFunc :: Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 makeNormalFunc = makeFunc Nothing
+makeVarArgs :: LispVal -> Env -> [LispVal] -> [LispVal] -> IOThrowsError LispVal
 makeVarArgs = makeFunc . Just . T.pack . showLispVal
 
 eval :: Env -> LispVal -> IOThrowsError LispVal
@@ -174,12 +177,24 @@ eval env (List [Atom "if", pred, conseq, alt]) = do
     Bool False -> eval env alt
     _ -> eval env conseq
 eval env (List [Atom "set!", Atom var, form]) = eval env form >>= setVar env var
+eval env (List [Atom "define", Atom var, form]) = eval env form >>= defineVar env var
 eval env (List (Atom "define" : List (Atom var : params) : body)) =
     makeNormalFunc env params body >>= defineVar env var
 eval env (List (Atom "lambda" : List params : body)) =
     makeNormalFunc env params body
 eval env (List (Atom "lambda" : varargs@(Atom _) : body)) =
     makeVarArgs varargs env [] body
+-- Clearly not functional code here, although the above isn't as well, the order is important
+-- and everything must be evaluated this is why last $ map will not work, since Haskell applies rewrite rules
+-- and only evaluates the very last LispVal
+eval env (List' ls) = eval' env ls Nothing
+  where
+    eval' :: Env -> [LispVal] -> Maybe LispVal -> IOThrowsError LispVal
+    eval' env [] p = maybe (return $ List []) return p
+    eval' env (x:xs) p = do 
+      o <- eval env x
+      eval' env xs (Just o)
+      
 
 eval env (List (function : args)) = do
     func <- eval env function
@@ -239,6 +254,6 @@ apply (Func params varargs body closure) args =
                 Nothing -> return env
 
 readExpr :: String -> T.Text -> ThrowsError LispVal
-readExpr f s = case parse parseExpr f s of
+readExpr f s = case parse parseSExprs f s of
                 Right val -> return val
                 Left err -> throwError $ Parser err
